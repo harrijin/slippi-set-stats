@@ -8,9 +8,13 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "pkg . --out-path \"build\""
   },
+  "pkg":{
+    "assets": ["stage-images/**", "stock-icons/**"]
+  },
   "author": "Jas Laferriere",
   "license": "ISC",
   "dependencies": {
+    "jimp": "^0.16.1",
     "lodash": "^4.17.15",
     "moment": "^2.24.0",
     "slp-parser-js": "^3.0.0"

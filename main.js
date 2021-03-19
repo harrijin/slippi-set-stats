@@ -6,6 +6,53 @@ const moment = require('moment');
 const path = require('path');
 const _ = require('lodash');
 const fs = require('fs');
+var Jimp = require('jimp');
+const stageData = {
+
+    "8":{
+        "name": "yoshis",
+        "cameraMinX":-126,
+        "cameraMaxX":125.3,
+        "cameraMinY":-49.7,
+        "cameraMaxY":118.3,
+    },
+    "31":{
+        "name": "battlefield",
+        "cameraMinX":-160,
+        "cameraMaxX":160,
+        "cameraMinY":-47.2,
+        "cameraMaxY":136
+    },
+    "32":{
+        "name": "fd",
+        "cameraMinX":-168.25,
+        "cameraMaxX":168.25,
+        "cameraMinY":-75.7628865,
+        "cameraMaxY":115.2371134
+    },
+    "2":{
+        "name": "fod",
+        "cameraMinX":-123.75,
+        "cameraMaxX":123.75,
+        "cameraMinY":-84.75,
+        "cameraMaxY":112.5
+    },
+    "28":{
+        "name": "dreamland",
+        "cameraMinX":-165,
+        "cameraMaxX":165,
+        "cameraMinY":-81,
+        "cameraMaxY":190
+    },
+    "3":{
+        "name": "stadium",
+        "cameraMinX":-170,
+        "cameraMaxX":170,
+        "cameraMinY":-65,
+        "cameraMaxY":120
+    }
+}
+
 
 const stats = {
   OPENINGS_PER_KILL: "openingsPerKill",
@@ -20,6 +67,7 @@ const stats = {
   AVG_KILL_PERCENT: "avgKillPercent",
   HIGH_DAMAGE_PUNISHES: "highDamagePunishes",
   DAMAGE_DONE: "damageDone",
+  NEUTRAL_WIN_COORDS: "neutralWinCoords",
 };
 
 const statDefininitions = {
@@ -331,6 +379,50 @@ const statDefininitions = {
       return genOverallRatioStat(games, playerIndex, 'damagePerOpening', 1, 'count');
     },
   },
+  [stats.NEUTRAL_WIN_COORDS]: {
+    id: stats.NEUTRAL_WIN_COORDS,
+    name: "Neutral Win Coordinates",
+    calculate: (games, playerIndex) => {
+      const neutralMoves = _.flatMap(games, game => {
+        const gameId = _.get(game, ['metadata', 'startAt']);
+        const frames = _.get(game, ['frames']);
+        const conversions = _.get(game, ['stats', 'conversions']) || [];
+        const conversionsForPlayer = _.filter(conversions, conversion => {
+          const isForPlayer = conversion.playerIndex === playerIndex;
+          // const isNeutralWin = conversion.openingType === 'neutral-win';
+          return isForPlayer;
+        });
+
+        return _.map(conversionsForPlayer, conversion => {
+          var output = _.first(conversion.moves);
+          output.frameData = frames[output.frame];
+          output.openingType = conversion.openingType;
+          output.stageId = game.settings.stageId;
+          output.gameId = gameId;
+          return output;
+        });
+      });
+
+      const neutralMoveCoords = _.map(neutralMoves, move => {
+        return {
+          x: move.frameData.players[playerIndex].pre.positionX,
+          y: move.frameData.players[playerIndex].pre.positionY,
+          id: move.moveId,
+          name: moveUtil.getMoveName(move.moveId),
+          shortName: moveUtil.getMoveShortName(move.moveId),
+          stageId: move.stageId,
+          openingType: move.openingType,
+          gameId: move.gameId
+        };
+      });
+
+      // Aggregate by stage
+      // const groupedCoords = _.groupBy(neutralMoveCoords, 'stageId');
+      // Group by game
+      const groupedCoords = _.groupBy(neutralMoveCoords, 'gameId');
+      return groupedCoords
+    },
+  }, 
 }
 
 function genOverallRatioStat(games, playerIndex, field, fixedNum, type = "ratio") {
@@ -607,9 +699,75 @@ function writeToFile(output) {
   console.log("Finished writting stats to output.json!");
 }
 
+async function generateImages(output){
+  //generate neutral wins image
+  var coords; 
+  for (var i = 0; i < output.summary.length; i++){
+    if(output.summary[i].id == "neutralWinCoords"){
+      coords = output.summary[i].results;
+      break;
+    }
+  }
+  const port0 = coords[0].port;
+  var character0; 
+  var color0;
+  var character1;
+  var color1;
+  for(var i = 0; i < 2; i++){
+    if(output.games[0].players[i].port == port0){
+      character0 = output.games[0].players[i].characterName;
+      color0 = output.games[0].players[i].characterColor;
+    }else{
+      character1 = output.games[0].players[i].characterName;
+      color1 = output.games[0].players[i].characterColor;
+    }
+  }
+  character0 = character0.toLowerCase();
+  character1 = character1.toLowerCase();
+  color0 = color0.toLowerCase();
+  color1 = color1.toLowerCase();
+  const stockIcon0 = await (await Jimp.read(path.join(__dirname, "stock-icons/" + character0 + "-" + color0 +".png"))).resize(72, 72);
+  const stockIcon1 = await (await Jimp.read(path.join(__dirname, "stock-icons/" + character1 + "-" + color1 + ".png"))).resize(72, 72);
+  delete coords[0].port;
+  for(var gameId in coords[0]){
+    var game = coords[0][gameId];
+    const stageId = game[0].stageId; 
+    var stageImage = await Jimp.read(path.join(__dirname, "stage-images/" + (stageId) + ".png"))
+    // stageImage.composite(stockIcon0, 0, 0, Jimp.BLEND_SOURCE_OVER, 0.5, 1);
+
+    for(var i = 0; i < game.length; i++){
+      // add stock icons to stage image
+      if(game[i].openingType == 'neutral-win'){
+        stageInfo = stageData[stageId];
+        convertedX = (game[i].x - stageInfo.cameraMinX)/(stageInfo.cameraMaxX-stageInfo.cameraMinX)*stageImage.getWidth();
+        convertedY = (stageInfo.cameraMaxY - game[i].y)/(stageInfo.cameraMaxY-stageInfo.cameraMinY)*stageImage.getHeight();
+        stageImage.composite(stockIcon0, convertedX-stockIcon0.getWidth()/2, convertedY-stockIcon1.getHeight(), {opacitySource:0.5});
+
+      }
+    }
+    game = coords[1][gameId];
+
+    for(var i = 0; i < game.length; i++){
+      // add stock icons to stage image
+      if(game[i].openingType == 'neutral-win'){
+        stageInfo = stageData[stageId];
+        convertedX = (game[i].x - stageInfo.cameraMinX)/(stageInfo.cameraMaxX-stageInfo.cameraMinX)*stageImage.getWidth();
+        convertedY = (stageInfo.cameraMaxY - game[i].y)/(stageInfo.cameraMaxY-stageInfo.cameraMinY)*stageImage.getHeight();
+        stageImage.composite(stockIcon1, convertedX-stockIcon0.getWidth()/2, convertedY-stockIcon1.getHeight(), {opacitySource:0.5});
+      }
+    }
+    stageImage.autocrop(0, false);
+    // save image with gameID as filename
+    stageImage.write(gameId + ".png");
+  }
+  // console.log(JSON.stringify(coords));
+  
+}
+
 module.exports = function () {
   const games = parseFilesInFolder();
   const filteredGames = filterGames(games);
   const output = generateOutput(filteredGames);
+  generateImages(output);
   writeToFile(output);
 };
