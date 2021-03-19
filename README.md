@@ -1,11 +1,29 @@
 # Slippi Set Stats
+
+This fork of Slippi Set Stats adds an additional feature. Each neutral win's coordinates are tracked and mapped onto an image (.png) of the stage with a transparent background. This image is intended to be shown alongside post-set stats for tournament streams.
+
+![image](https://user-images.githubusercontent.com/harrijin/slippi-set-stats/master/.github/images/example1.png)
+Mango vs Leffen Game 2 Losers Finals, The Big House 9
+
+![image](https://user-images.githubusercontent.com/harrijin/slippi-set-stats/master/.github/images/example2.png)
+Zain vs Hungrybox Game 3 Grand Finals, Genesis 7
+
+## Missing Features (to add)
+
+- Does not detect transformations between Sheik and Zelda
+- Only shows neutral wins, NOT counter-hits or trades
+   - The images get really cluttered when you add everything in, I'm happy to take suggestions for how to denote these without just generating a separate image for each
+   
+# Original README
+
 This is a tool used to compute post-set stats from slp files for Melee tournaments. It is intended to be used as part of a production workflow to display post-set stats such as what was done at Mainstage 2019.
 
 ![image](https://user-images.githubusercontent.com/1534726/65564174-e8c92080-df00-11e9-9805-bfc83638f19d.png)
 ## Usage
-1. Download executable for your operating system from the [Releases](https://github.com/JLaferri/slippi-set-stats/releases) tab
+
+1. Download executable for your operating system from the [Releases](https://github.com/harrijin/slippi-set-stats/releases) tab
 2. Move slp files from the same set to the folder containing the executable
-3. Run the executable, will generate an output.json file with the stats
+3. Run the executable, will generate an output.json file with the stats, as well as a .png file for each game. 
 ## Limitations
 1. Cannot know who the players were, the best that can be known is the nametag used
 2. If the players change ports during the set, the stats cannot be computed
@@ -179,4 +197,5 @@ Example:
 ## Build Instructions
 1. Install node 10.15.3
 2. Install pkg using `npm i pkg -g`
-3. Run `npm build` from the root of the repo
+3. Install Jimp using `npm i jimp -g`
+4. Run `npm run build` from the root of the repo
