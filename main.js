@@ -736,11 +736,9 @@ async function generateImages(output){
     }
   }
   games.sort();
-  console.log(games);
 
   for(var gameNum = 0; gameNum < games.length; gameNum++){
     const gameId = games[gameNum];
-    console.log(gameId);
     var game = coords[0][gameId];
     const stageId = game[0].stageId; 
     var stageImage = await Jimp.read(path.join(__dirname, "stage-images/" + (stageId) + ".png"))
