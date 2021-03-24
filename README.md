@@ -2,10 +2,10 @@
 
 This fork of Slippi Set Stats adds an additional feature. Each neutral win's coordinates are tracked and mapped onto an image (.png) of the stage with a transparent background. This image is intended to be shown alongside post-set stats for tournament streams.
 
-![image](https://user-images.githubusercontent.com/harrijin/slippi-set-stats/master/.github/images/example1.png)
+![Example image 1](./.github/images/example1.png)
 Mango vs Leffen Game 2 Losers Finals, The Big House 9
 
-![image](https://user-images.githubusercontent.com/harrijin/slippi-set-stats/master/.github/images/example2.png)
+![Example image 2](./.github/images/example2.png)
 Zain vs Hungrybox Game 3 Grand Finals, Genesis 7
 
 ## Missing Features (to add)
