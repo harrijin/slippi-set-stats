@@ -729,7 +729,18 @@ async function generateImages(output){
   const stockIcon0 = await (await Jimp.read(path.join(__dirname, "stock-icons/" + character0 + "-" + color0 +".png"))).resize(72, 72);
   const stockIcon1 = await (await Jimp.read(path.join(__dirname, "stock-icons/" + character1 + "-" + color1 + ".png"))).resize(72, 72);
   delete coords[0].port;
-  for(var gameId in coords[0]){
+  games = []
+  for(var key in coords[0]){
+    if(coords[0].hasOwnProperty(key)){
+      games.push(key);
+    }
+  }
+  games.sort();
+  console.log(games);
+
+  for(var gameNum = 0; gameNum < games.length; gameNum++){
+    const gameId = games[gameNum];
+    console.log(gameId);
     var game = coords[0][gameId];
     const stageId = game[0].stageId; 
     var stageImage = await Jimp.read(path.join(__dirname, "stage-images/" + (stageId) + ".png"))
@@ -757,17 +768,18 @@ async function generateImages(output){
       }
     }
     stageImage.autocrop(0, false);
-    // save image with gameID as filename
-    stageImage.write(gameId + ".png");
+    // save image 
+    console.log("writing image game" + (gameNum+1) + ".png");
+    stageImage.write("game" + (gameNum+1) + ".png");
   }
   // console.log(JSON.stringify(coords));
   
 }
 
-module.exports = function () {
+module.exports = async function () {
   const games = parseFilesInFolder();
   const filteredGames = filterGames(games);
   const output = generateOutput(filteredGames);
-  generateImages(output);
-  writeToFile(output);
+  await generateImages(output);
+  // writeToFile(output);
 };
