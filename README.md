@@ -3,16 +3,19 @@
 This fork of Slippi Set Stats adds an additional feature. Each neutral win's coordinates are tracked and mapped onto an image (.png) of the stage with a transparent background. This image is intended to be shown alongside post-set stats for tournament streams.
 
 ![Example image 1](./.github/images/example1.png)
-Mango vs Leffen Game 2 Losers Finals, The Big House 9
+[Mango vs Leffen Game 2 Losers Finals, The Big House 9](https://youtu.be/m79rBvDoTvU?t=275)
 
 ![Example image 2](./.github/images/example2.png)
-Zain vs Hungrybox Game 3 Grand Finals, Genesis 7
+[Zain vs Hungrybox Game 3 Grand Finals, Genesis 7](https://youtu.be/_OVP0Z9xF7M?t=514)
 
-## Missing Features (to add)
+![Example image 3](./.github/images/example3.png)
+Example showing Sheik and Zelda transformation in the same game
 
-- Does not detect transformations between Sheik and Zelda
+## Limitations
+
 - Only shows neutral wins, NOT counter-hits or trades
-   - The images get really cluttered when you add everything in, I'm happy to take suggestions for how to denote these without just generating a separate image for each
+   - The images get really cluttered when you add everything in, I'm happy to take suggestions for how to represent these without just generating a separate image for each
+- Might be interesting to show which conversions led to a kill, not sure how to indicate this without adding clutter or being confusing though (applying a color filter might be confusing in dittos)
    
 # Original README
 
