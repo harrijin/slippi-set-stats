@@ -6,7 +6,7 @@ const moment = require('moment');
 const path = require('path');
 const _ = require('lodash');
 const fs = require('fs');
-var Jimp = require('jimp');
+const Jimp = require('jimp');
 const stageData = {
 
     "8":{
@@ -694,9 +694,9 @@ function generateOutput(games) {
 }
 
 function writeToFile(output) {
-  console.log(util.inspect(output, { depth: 6, colors: true }));
+  // console.log(util.inspect(output, { depth: 6, colors: true }));
   fs.writeFileSync('output.json', JSON.stringify(output));
-  console.log("Finished writting stats to output.json!");
+  console.log("Finished writing stats to output.json!");
 }
 
 async function generateImages(output){
@@ -767,7 +767,7 @@ async function generateImages(output){
     }
     stageImage.autocrop(0, false);
     // save image 
-    console.log("writing image game" + (gameNum+1) + ".png");
+    console.log("Writing image game" + (gameNum+1) + ".png");
     stageImage.write("game" + (gameNum+1) + ".png");
   }
   // console.log(JSON.stringify(coords));
@@ -778,6 +778,6 @@ module.exports = async function () {
   const games = parseFilesInFolder();
   const filteredGames = filterGames(games);
   const output = generateOutput(filteredGames);
+  writeToFile(output);
   await generateImages(output);
-  // writeToFile(output);
 };
