@@ -384,6 +384,8 @@ const statDefininitions = {
     name: "Neutral Win Coordinates",
     calculate: (games, playerIndex) => {
       const neutralMoves = _.flatMap(games, game => {
+        const players = _.get(game.settings, ['players']);
+        const player = _.find(players, {'playerIndex':playerIndex});
         const gameId = _.get(game, ['metadata', 'startAt']);
         const frames = _.get(game, ['frames']);
         const conversions = _.get(game, ['stats', 'conversions']) || [];
@@ -392,19 +394,22 @@ const statDefininitions = {
           // const isNeutralWin = conversion.openingType === 'neutral-win';
           return isForPlayer;
         });
-
         return _.map(conversionsForPlayer, conversion => {
           var output = _.first(conversion.moves);
           output.frameData = frames[output.frame];
           output.openingType = conversion.openingType;
           output.stageId = game.settings.stageId;
           output.gameId = gameId;
+          // Check if sheik or zelda
+          if(player.characterId === 18 || player.characterId === 19){
+            output.shielda = true;
+          }
           return output;
         });
       });
 
       const neutralMoveCoords = _.map(neutralMoves, move => {
-        return {
+        output = {
           x: move.frameData.players[playerIndex].pre.positionX,
           y: move.frameData.players[playerIndex].pre.positionY,
           id: move.moveId,
@@ -414,6 +419,14 @@ const statDefininitions = {
           openingType: move.openingType,
           gameId: move.gameId
         };
+        if(move.shielda){
+          if(move.frameData.players[playerIndex].post.internalCharacterId === 7){
+            output.isZelda = false;
+          }else{
+            output.isZelda = true;
+          }
+        }
+        return output;
       });
 
       // Aggregate by stage
@@ -726,8 +739,9 @@ async function generateImages(output){
   character1 = character1.toLowerCase();
   color0 = color0.toLowerCase();
   color1 = color1.toLowerCase();
-  const stockIcon0 = await (await Jimp.read(path.join(__dirname, "stock-icons/" + character0 + "-" + color0 +".png"))).resize(72, 72);
-  const stockIcon1 = await (await Jimp.read(path.join(__dirname, "stock-icons/" + character1 + "-" + color1 + ".png"))).resize(72, 72);
+  const iconSize = 72;
+  const stockIcon0 = await (await Jimp.read(path.join(__dirname, "stock-icons/" + character0 + "-" + color0 +".png"))).resize(iconSize, iconSize);
+  const stockIcon1 = await (await Jimp.read(path.join(__dirname, "stock-icons/" + character1 + "-" + color1 + ".png"))).resize(iconSize, iconSize);
   delete coords[0].port;
   games = []
   for(var key in coords[0]){
@@ -743,26 +757,39 @@ async function generateImages(output){
     const stageId = game[0].stageId; 
     var stageImage = await Jimp.read(path.join(__dirname, "stage-images/" + (stageId) + ".png"))
     // stageImage.composite(stockIcon0, 0, 0, Jimp.BLEND_SOURCE_OVER, 0.5, 1);
+    const stageInfo = stageData[stageId];
 
     for(var i = 0; i < game.length; i++){
       // add stock icons to stage image
       if(game[i].openingType == 'neutral-win'){
-        stageInfo = stageData[stageId];
-        convertedX = (game[i].x - stageInfo.cameraMinX)/(stageInfo.cameraMaxX-stageInfo.cameraMinX)*stageImage.getWidth();
-        convertedY = (stageInfo.cameraMaxY - game[i].y)/(stageInfo.cameraMaxY-stageInfo.cameraMinY)*stageImage.getHeight();
-        stageImage.composite(stockIcon0, convertedX-stockIcon0.getWidth()/2, convertedY-stockIcon1.getHeight(), {opacitySource:0.5});
-
+        const convertedX = (game[i].x - stageInfo.cameraMinX)/(stageInfo.cameraMaxX-stageInfo.cameraMinX)*stageImage.getWidth();
+        const convertedY = (stageInfo.cameraMaxY - game[i].y)/(stageInfo.cameraMaxY-stageInfo.cameraMinY)*stageImage.getHeight();
+        if(game[i].isZelda && character0 === 'sheik' ){
+          const zeldaIcon = await(await Jimp.read(path.join(__dirname, "stock-icons/zelda-" + color0 + ".png"))).resize(iconSize, iconSize);
+          stageImage.composite(zeldaIcon, convertedX-iconSize/2, convertedY-iconSize, {opacitySource:0.5});
+        }else if(character0 === 'zelda' && !game[i].isZelda){
+          const sheikIcon = await(await Jimp.read(path.join(__dirname, "stock-icons/sheik-" + color0 + ".png"))).resize(iconSize, iconSize);
+          stageImage.composite(sheikIcon, convertedX-iconSize/2, convertedY-iconSize, {opacitySource:0.5});
+        }else{
+          stageImage.composite(stockIcon0, convertedX-iconSize/2, convertedY-iconSize, {opacitySource:0.5});
+        }
       }
     }
     game = coords[1][gameId];
 
     for(var i = 0; i < game.length; i++){
-      // add stock icons to stage image
       if(game[i].openingType == 'neutral-win'){
-        stageInfo = stageData[stageId];
-        convertedX = (game[i].x - stageInfo.cameraMinX)/(stageInfo.cameraMaxX-stageInfo.cameraMinX)*stageImage.getWidth();
-        convertedY = (stageInfo.cameraMaxY - game[i].y)/(stageInfo.cameraMaxY-stageInfo.cameraMinY)*stageImage.getHeight();
-        stageImage.composite(stockIcon1, convertedX-stockIcon0.getWidth()/2, convertedY-stockIcon1.getHeight(), {opacitySource:0.5});
+        const convertedX = (game[i].x - stageInfo.cameraMinX)/(stageInfo.cameraMaxX-stageInfo.cameraMinX)*stageImage.getWidth();
+        const convertedY = (stageInfo.cameraMaxY - game[i].y)/(stageInfo.cameraMaxY-stageInfo.cameraMinY)*stageImage.getHeight();
+        if(game[i].isZelda && character1 === 'sheik' ){
+          const zeldaIcon = await(await Jimp.read(path.join(__dirname, "stock-icons/zelda-" + color1 + ".png"))).resize(iconSize, iconSize);
+          stageImage.composite(zeldaIcon, convertedX-iconSize/2, convertedY-iconSize, {opacitySource:0.5});
+        }else if(character1 === 'zelda' && !game[i].isZelda){
+          const sheikIcon = await(await Jimp.read(path.join(__dirname, "stock-icons/sheik-" + color1 + ".png"))).resize(iconSize, iconSize);
+          stageImage.composite(sheikIcon, convertedX-stockIcon0.iconSize/2, convertedY-iconSize, {opacitySource:0.5});
+        }else{
+          stageImage.composite(stockIcon1, convertedX-iconSize/2, convertedY-iconSize, {opacitySource:0.5});
+        }
       }
     }
     stageImage.autocrop(0, false);
